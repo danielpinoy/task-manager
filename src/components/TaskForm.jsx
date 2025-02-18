@@ -1,8 +1,9 @@
+// TaskForm.jsx
 import { useState } from "react";
-function TaskForm({ onAddTask }) {
+
+function TaskForm({ onAddTask, isOpen, onClose }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -10,65 +11,73 @@ function TaskForm({ onAddTask }) {
       onAddTask(title.trim(), description.trim());
       setTitle("");
       setDescription("");
-      setIsExpanded(false);
+      onClose();
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <>
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-sm p-6 space-y-4"
-      >
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a new Task..."
-            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-          >
-            <span>{isExpanded ? "Hide Description" : "Add Description"}</span>
-            <svg
-              className={`ml-1 h-4 w-4 transform transition-transform ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">New Task</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-        </div>
-        {isExpanded && (
-          <div className="transition-all duration-200 ease-in-out">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add task description (optional)"
-              className="w-full p-3 border border-gray-200 rounded-lg h-24 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
+              <span className="material-icons">close</span>
+            </button>
           </div>
-        )}
-        <button
-          type="submit"
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium transition-colors"
-        >
-          Add Task
-        </button>
-      </form>
-    </>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Task Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter task title"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                placeholder="Enter task description"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+              >
+                Create Task
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
+
 export default TaskForm;

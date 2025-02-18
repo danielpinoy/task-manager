@@ -2,7 +2,7 @@ function TaskFilter({ currentFilter, onFilterChange }) {
   return (
     <div className="task-filter flex space-x-2 mb-6">
       <button
-        className={`px-4 py-2 rounded ${
+        className={`px-3 py-1 text-sm rounded ${
           currentFilter === "all"
             ? "bg-blue-500 text-white"
             : "bg-gray-200 hover:bg-gray-300"
@@ -12,7 +12,7 @@ function TaskFilter({ currentFilter, onFilterChange }) {
         All
       </button>
       <button
-        className={`px-4 py-2 rounded ${
+        className={`px-3 py-1 text-sm rounded ${
           currentFilter === "active"
             ? "bg-blue-500 text-white"
             : "bg-gray-200 hover:bg-gray-300"
@@ -22,7 +22,7 @@ function TaskFilter({ currentFilter, onFilterChange }) {
         Active
       </button>
       <button
-        className={`px-4 py-2 rounded ${
+        className={`px-3 py-1 text-sm rounded ${
           currentFilter === "completed"
             ? "bg-blue-500 text-white"
             : "bg-gray-200 hover:bg-gray-300"

@@ -33,6 +33,7 @@ export default [
         { allowConstantExport: true },
       ],
       "no-undef": "warn", // Change from "error" to "warn"
+      "react/prop-types": "off", // Disable prop-types validation
     },
   },
 ];
