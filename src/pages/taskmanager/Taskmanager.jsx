@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import TaskForm from "@components/TaskForm";
-import Navbar from "@/components/navbar/Navbar";
 
 function TaskManager() {
   const [tasks, setTasks] = useState([]);
@@ -65,9 +64,9 @@ function TaskManager() {
     const sourceItems = tasks.filter(
       (task) => task.status === source.droppableId
     );
+
     // Find all tasks with the destination status
     // eslint-disable-next-line no-unused-vars
-
     const destinationItems =
       source.droppableId === destination.droppableId
         ? sourceItems
@@ -116,7 +115,7 @@ function TaskManager() {
         </button>
       </div>
 
-      <Navbar />
+      {/* <Navbar /> */}
 
       <TaskForm
         onAddTask={addTask}
