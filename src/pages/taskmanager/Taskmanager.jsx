@@ -1,42 +1,14 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import TaskForm from "@components/TaskForm";
-
+import { sampleTasks } from "../../services/api";
 function TaskManager() {
   const [tasks, setTasks] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    const loadInitialTasks = () => {
-      const initialTasks = [
-        {
-          id: "1",
-          title: "Organize Digital Files",
-          description:
-            "Need to pick up groceries for the week, including fresh produce, snacks, and household essentials for daily meals and meal prep.",
-          status: "not-started",
-          date: "January 28, 2025",
-        },
-        {
-          id: "2",
-          title: "Self-Care Routine",
-          description:
-            "Practice guitar for 30 minutes to improve skills, focusing on new chords and familiarizing myself with a few songs to improve musical dexterity.",
-          status: "in-progress",
-          date: "January 31, 2025",
-        },
-        {
-          id: "3",
-          title: "Deep Cleaning of Apartment",
-          description:
-            "Reply to friends and family emails, catching up on personal communication, and responding to messages that require attention, like birthday invites and updates.",
-          status: "completed",
-          date: "January 31, 2025",
-        },
-      ];
-      setTasks(initialTasks);
-    };
-    loadInitialTasks();
+    // Load tasks from the Api instead of local initialTasks
+    setTasks(sampleTasks);
   }, []);
 
   const addTask = (title, description) => {
@@ -50,6 +22,7 @@ function TaskManager() {
         month: "long",
         day: "numeric",
       }),
+      priority: "low", // Default priority
     };
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
@@ -100,7 +73,8 @@ function TaskManager() {
     setTasks(finalTasks);
   };
 
-  const getTasksByStatus = (status) => {
+  // Use local getTasksByStatus function that uses the current tasks state
+  const getTasksByStatusLocal = (status) => {
     return tasks.filter((task) => task.status === status);
   };
 
@@ -114,8 +88,6 @@ function TaskManager() {
           <span className="text-xl">+</span> New Task
         </button>
       </div>
-
-      {/* <Navbar /> */}
 
       <TaskForm
         onAddTask={addTask}
@@ -145,7 +117,7 @@ function TaskManager() {
                       snapshot.isDraggingOver ? "bg-gray-100" : ""
                     }`}
                   >
-                    {getTasksByStatus(status).map((task, index) => (
+                    {getTasksByStatusLocal(status).map((task, index) => (
                       <Draggable
                         key={task.id}
                         draggableId={task.id}
