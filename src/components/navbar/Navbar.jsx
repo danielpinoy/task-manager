@@ -3,16 +3,6 @@ import { NavLink } from "react-router-dom";
 import CompactCount from "./CompactCount";
 function Navbar() {
   // Mock data - in a real app, you might fetch this from an API or context
-  const mockTasks = [
-    { id: "1", status: "not-started" },
-    { id: "2", status: "in-progress" },
-    { id: "3", status: "completed" },
-    { id: "4", status: "not-started" },
-    { id: "5", status: "completed" },
-    { id: "6", status: "not-started" },
-    { id: "7", status: "in-progress" },
-    { id: "8", status: "completed" },
-  ];
 
   return (
     <nav className="border-b pb-4">
@@ -94,7 +84,7 @@ function Navbar() {
             </div>
 
             {/* Import CompactCount component */}
-            <CompactCount tasks={mockTasks} size={48} />
+            <CompactCount size={48} />
           </div>
         </div>
       </div>

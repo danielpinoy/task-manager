@@ -24,24 +24,6 @@ function Count() {
         <CompactCount size={320} showLabels={true} />
       </div>
 
-      {/* Legend */}
-      <div className="mt-8 grid grid-cols-3 gap-8 text-center">
-        <div className="flex flex-col items-center">
-          <div className="text-gray-500">In progress</div>
-          <div className="w-2 h-2 mt-1 bg-gray-300 rounded-full"></div>
-        </div>
-
-        <div className="flex flex-col items-center">
-          <div className="text-gray-500">Not started</div>
-          <div className="w-2 h-2 mt-1 bg-gray-500 rounded-full"></div>
-        </div>
-
-        <div className="flex flex-col items-center">
-          <div className="text-gray-500">Completed</div>
-          <div className="w-2 h-2 mt-1 bg-gray-700 rounded-full"></div>
-        </div>
-      </div>
-
       {/* Task Statistics */}
       <div className="mt-12 w-full max-w-lg">
         <h2 className="text-xl font-semibold mb-4">Task Statistics</h2>
