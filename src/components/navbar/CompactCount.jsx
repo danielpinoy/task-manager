@@ -1,6 +1,6 @@
 // src/components/CompactCount.jsx
 import { useState, useEffect } from "react";
-import { sampleTasks, getTaskStatusCounts } from "../../services/api";
+import { getTaskStatusCounts } from "../../services/api";
 function CompactCount({ size = 48, showLabels = false }) {
   // State to store task counts by status
   const [taskCounts, setTaskCounts] = useState({
