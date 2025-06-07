@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; // Import useAuth
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,9 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Get login function from AuthContext
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,6 +67,7 @@ function Login() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // THIS IS KEY - sends/receives cookies
         body: JSON.stringify(formData),
       });
 
@@ -72,11 +77,10 @@ function Login() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store token in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // IMPORTANT: Update AuthContext with user data
+      await login(data.user);
 
-      // Redirect to dashboard/overview
+      // Now navigate - AuthContext knows user is logged in
       navigate("/overview");
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");

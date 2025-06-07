@@ -83,6 +83,7 @@ function Register() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Add credentials for consistency
         body: JSON.stringify(dataToSend),
       });
 
@@ -94,7 +95,10 @@ function Register() {
 
       // Navigate to login page on successful registration
       navigate("/login", {
-        state: { message: "Registration successful! Please login." },
+        state: {
+          message:
+            "Registration successful! Please login with your credentials.",
+        },
       });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
