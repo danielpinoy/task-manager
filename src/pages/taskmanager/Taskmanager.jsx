@@ -1,82 +1,212 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import TaskForm from "@components/TaskForm";
-import { sampleTasks } from "../../services/api";
+import { taskApi } from "../../services/api";
+
 function TaskManager() {
   const [tasks, setTasks] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Load tasks from API on component mount
   useEffect(() => {
-    // Load tasks from the Api instead of local initialTasks
-    setTasks(sampleTasks);
+    loadTasks();
   }, []);
 
-  const addTask = (title, description) => {
-    const newTask = {
-      id: Date.now().toString(),
-      title,
-      description,
-      status: "not-started",
-      date: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      priority: "low", // Default priority
-    };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const fetchedTasks = await taskApi.getAllTasks();
+      setTasks(fetchedTasks);
+      setError("");
+    } catch (err) {
+      setError("Failed to load tasks: " + err.message);
+      console.error("Error loading tasks:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const onDragEnd = (result) => {
+  // CREATE TASK FUNCTION
+  const addTask = async (title, description, priority = "low") => {
+    try {
+      const newTaskData = {
+        title,
+        description,
+        status: "not-started",
+        priority: priority,
+      };
+
+      const response = await taskApi.createTask(newTaskData);
+
+      // Add the new task to local state
+      setTasks((prevTasks) => [response.task, ...prevTasks]);
+      setError("");
+
+      return response.task; // Return the created task
+    } catch (err) {
+      setError("Failed to create task: " + err.message);
+      console.error("Error creating task:", err);
+      throw err; // Re-throw so TaskForm can handle it
+    }
+  };
+
+  // UPDATE TASK FUNCTION
+  const updateTask = async (taskId, updatedData) => {
+    try {
+      const response = await taskApi.updateTask(taskId, updatedData);
+
+      // Update local state
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === taskId ? response.task : task))
+      );
+      setError("");
+
+      return response.task;
+    } catch (err) {
+      setError("Failed to update task: " + err.message);
+      console.error("Error updating task:", err);
+      throw err;
+    }
+  };
+
+  // DELETE TASK FUNCTION
+  const deleteTask = async (taskId) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) {
+      return;
+    }
+
+    try {
+      await taskApi.deleteTask(taskId);
+
+      // Remove from local state
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+      setError("");
+    } catch (err) {
+      setError("Failed to delete task: " + err.message);
+      console.error("Error deleting task:", err);
+    }
+  };
+
+  // DRAG AND DROP FUNCTION
+  const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
 
     // Drop outside the list
     if (!destination) return;
 
-    // Find all tasks with the source status
-    const sourceItems = tasks.filter(
-      (task) => task.status === source.droppableId
-    );
-
-    // Find all tasks with the destination status
-    // eslint-disable-next-line no-unused-vars
-    const destinationItems =
-      source.droppableId === destination.droppableId
-        ? sourceItems
-        : tasks.filter((task) => task.status === destination.droppableId);
+    // No change in position
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
 
     // Find the task being moved
-    // eslint-disable-next-line no-unused-vars
-    const [movedTask] = sourceItems.splice(source.index, 1);
+    const taskToMove = tasks.find((task) => task.id.toString() === draggableId);
+    if (!taskToMove) return;
 
-    // Update the task's status
+    // Optimistically update UI first
     const updatedTask = {
-      ...tasks.find((task) => task.id === draggableId),
+      ...taskToMove,
       status: destination.droppableId,
     };
 
-    // Create new array of all tasks
-    const newTasks = tasks.filter((task) => task.id !== draggableId);
-
-    // Find where to insert the task in its new status group
-    const destinationTasks = newTasks.filter(
-      (task) => task.status === destination.droppableId
+    const newTasks = tasks.map((task) =>
+      task.id.toString() === draggableId ? updatedTask : task
     );
-    destinationTasks.splice(destination.index, 0, updatedTask);
 
-    // Combine all tasks
-    const finalTasks = [
-      ...newTasks.filter((task) => task.status !== destination.droppableId),
-      ...destinationTasks,
-    ];
+    setTasks(newTasks);
 
-    setTasks(finalTasks);
+    // Then update backend
+    try {
+      await updateTask(taskToMove.id, {
+        title: taskToMove.title,
+        description: taskToMove.description,
+        status: destination.droppableId,
+        priority: taskToMove.priority,
+      });
+    } catch (err) {
+      // Revert on error
+      setTasks(tasks);
+    }
   };
 
-  // Use local getTasksByStatus function that uses the current tasks state
+  // EDIT TASK FUNCTION (for inline editing)
+  const editTask = async (taskId, field, value) => {
+    const taskToEdit = tasks.find((task) => task.id === taskId);
+    if (!taskToEdit) return;
+
+    try {
+      await updateTask(taskId, {
+        ...taskToEdit,
+        [field]: value,
+      });
+    } catch (err) {
+      // Error is already handled in updateTask
+    }
+  };
+
+  // TOGGLE TASK STATUS FUNCTION
+  const toggleTaskStatus = async (taskId) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    // Cycle through statuses: not-started -> in-progress -> completed -> not-started
+    let newStatus;
+    switch (task.status) {
+      case "not-started":
+        newStatus = "in-progress";
+        break;
+      case "in-progress":
+        newStatus = "completed";
+        break;
+      case "completed":
+        newStatus = "not-started";
+        break;
+      default:
+        newStatus = "not-started";
+    }
+
+    try {
+      await updateTask(taskId, {
+        ...task,
+        status: newStatus,
+      });
+    } catch (err) {
+      // Error is already handled in updateTask
+    }
+  };
+
+  // CHANGE TASK PRIORITY FUNCTION
+  const changeTaskPriority = async (taskId, newPriority) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    try {
+      await updateTask(taskId, {
+        ...task,
+        priority: newPriority,
+      });
+    } catch (err) {
+      // Error is already handled in updateTask
+    }
+  };
+
+  // Get tasks by status from current state
   const getTasksByStatusLocal = (status) => {
     return tasks.filter((task) => task.status === status);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -87,6 +217,18 @@ function TaskManager() {
         >
           <span className="text-xl">+</span> New Task
         </button>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+            <button
+              onClick={() => setError("")}
+              className="float-right text-red-700 hover:text-red-900"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
 
       <TaskForm
@@ -106,6 +248,9 @@ function TaskManager() {
                   : status === "in-progress"
                   ? "In Progress"
                   : "Completed"}
+                <span className="text-sm text-gray-500">
+                  ({getTasksByStatusLocal(status).length})
+                </span>
               </h2>
 
               <Droppable droppableId={status}>
@@ -120,7 +265,7 @@ function TaskManager() {
                     {getTasksByStatusLocal(status).map((task, index) => (
                       <Draggable
                         key={task.id}
-                        draggableId={task.id}
+                        draggableId={task.id.toString()}
                         index={index}
                       >
                         {(provided, snapshot) => (
@@ -132,13 +277,73 @@ function TaskManager() {
                               snapshot.isDragging ? "shadow-md" : ""
                             }`}
                           >
-                            <h3 className="font-medium text-gray-900 mb-2">
-                              {task.title}
-                            </h3>
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-medium text-gray-900 flex-1">
+                                {task.title}
+                              </h3>
+                              <div className="flex gap-2 ml-2">
+                                {/* Priority Selector */}
+                                <select
+                                  value={task.priority}
+                                  onChange={(e) =>
+                                    changeTaskPriority(task.id, e.target.value)
+                                  }
+                                  className="text-xs border rounded px-1 py-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <option value="high">High</option>
+                                  <option value="low">Low</option>
+                                  <option value="minimal">Minimal</option>
+                                </select>
+
+                                {/* Delete Button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteTask(task.id);
+                                  }}
+                                  className="text-red-500 hover:text-red-700 text-sm"
+                                  title="Delete task"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+
                             <p className="text-gray-600 text-sm mb-2">
                               {task.description}
                             </p>
-                            <p className="text-gray-500 text-sm">{task.date}</p>
+
+                            <div className="flex justify-between items-center">
+                              <p className="text-gray-500 text-sm">
+                                {new Date(task.created_at).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )}
+                              </p>
+
+                              {/* Status Toggle Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleTaskStatus(task.id);
+                                }}
+                                className={`px-2 py-1 text-xs rounded ${
+                                  task.priority === "high"
+                                    ? "bg-red-100 text-red-800"
+                                    : task.priority === "low"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
+                                } hover:opacity-75`}
+                                title="Click to cycle status"
+                              >
+                                {task.priority}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </Draggable>

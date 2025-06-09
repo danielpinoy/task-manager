@@ -1,9 +1,14 @@
 // src/pages/count/Count.jsx
 import { useState, useEffect } from "react";
 import CompactCount from "../../components/navbar/CompactCount";
-import { getTaskStatusCounts } from "../../services/api";
+import { taskApi, getTaskStatusCounts } from "../../services/api";
+
 function Count() {
-  // Get task counts from the API
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Get task counts from the loaded tasks
   const [taskCounts, setTaskCounts] = useState({
     completed: 0,
     inProgress: 0,
@@ -12,16 +17,56 @@ function Count() {
   });
 
   useEffect(() => {
-    // Use the helper function to get status counts
-    const counts = getTaskStatusCounts();
-    setTaskCounts(counts);
+    loadTasks();
   }, []);
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const fetchedTasks = await taskApi.getAllTasks();
+      setTasks(fetchedTasks);
+
+      // Calculate counts from fetched tasks
+      const counts = getTaskStatusCounts(fetchedTasks);
+      setTaskCounts(counts);
+      setError("");
+    } catch (err) {
+      setError("Failed to load tasks: " + err.message);
+      console.error("Error loading tasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button
+            onClick={loadTasks}
+            className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       {/* Large Count Chart */}
       <div className="mb-8">
-        <CompactCount size={320} showLabels={true} />
+        <CompactCount size={320} showLabels={true} taskCounts={taskCounts} />
       </div>
 
       {/* Task Statistics */}

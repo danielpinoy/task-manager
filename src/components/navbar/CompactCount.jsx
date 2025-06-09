@@ -1,20 +1,12 @@
-// src/components/CompactCount.jsx
-import { useState, useEffect } from "react";
-import { getTaskStatusCounts } from "../../services/api";
-function CompactCount({ size = 48, showLabels = false }) {
-  // State to store task counts by status
-  const [taskCounts, setTaskCounts] = useState({
+// src/components/navbar/CompactCount.jsx
+function CompactCount({ size = 48, showLabels = false, taskCounts }) {
+  // Use provided taskCounts or default values
+  const counts = taskCounts || {
     completed: 0,
     inProgress: 0,
     notStarted: 0,
     total: 0,
-  });
-
-  useEffect(() => {
-    // Use the helper function to get status counts from Api
-    const counts = getTaskStatusCounts();
-    setTaskCounts(counts);
-  }, []);
+  };
 
   const viewBoxSize = 100; // Use a fixed viewBox size for easier calculations
   const centerX = viewBoxSize / 2;
@@ -31,7 +23,7 @@ function CompactCount({ size = 48, showLabels = false }) {
 
   // Calculate the start and end angles for each segment
   const calculateSegments = () => {
-    const total = taskCounts.total || 1; // Prevent division by zero
+    const total = counts.total || 1; // Prevent division by zero
 
     // Calculate how many degrees each task takes in the 360° circle
     const degreesPerTask = 360 / total;
@@ -42,19 +34,19 @@ function CompactCount({ size = 48, showLabels = false }) {
     // Calculate segments in clockwise order
     const completedSegment = {
       startAngle: currentAngle,
-      endAngle: currentAngle + taskCounts.completed * degreesPerTask,
+      endAngle: currentAngle + counts.completed * degreesPerTask,
     };
     currentAngle = completedSegment.endAngle;
 
     const inProgressSegment = {
       startAngle: currentAngle,
-      endAngle: currentAngle + taskCounts.inProgress * degreesPerTask,
+      endAngle: currentAngle + counts.inProgress * degreesPerTask,
     };
     currentAngle = inProgressSegment.endAngle;
 
     const notStartedSegment = {
       startAngle: currentAngle,
-      endAngle: currentAngle + taskCounts.notStarted * degreesPerTask,
+      endAngle: currentAngle + counts.notStarted * degreesPerTask,
     };
 
     return {
@@ -148,7 +140,7 @@ function CompactCount({ size = 48, showLabels = false }) {
         style={{ overflow: "visible" }} // Allow labels to extend outside SVG
       >
         {/* Completed Segment */}
-        {taskCounts.completed > 0 && (
+        {counts.completed > 0 && (
           <path
             d={createArcPath(
               segments.completed.startAngle,
@@ -159,7 +151,7 @@ function CompactCount({ size = 48, showLabels = false }) {
         )}
 
         {/* In Progress Segment */}
-        {taskCounts.inProgress > 0 && (
+        {counts.inProgress > 0 && (
           <path
             d={createArcPath(
               segments.inProgress.startAngle,
@@ -170,7 +162,7 @@ function CompactCount({ size = 48, showLabels = false }) {
         )}
 
         {/* Not Started Segment */}
-        {taskCounts.notStarted > 0 && (
+        {counts.notStarted > 0 && (
           <path
             d={createArcPath(
               segments.notStarted.startAngle,
@@ -184,7 +176,7 @@ function CompactCount({ size = 48, showLabels = false }) {
         {showLabels && (
           <>
             {/* Connector lines */}
-            {taskCounts.completed > 0 && (
+            {counts.completed > 0 && (
               <path
                 d={createConnectorLine(segments.completed)}
                 stroke="#999"
@@ -193,7 +185,7 @@ function CompactCount({ size = 48, showLabels = false }) {
               />
             )}
 
-            {taskCounts.inProgress > 0 && (
+            {counts.inProgress > 0 && (
               <path
                 d={createConnectorLine(segments.inProgress)}
                 stroke="#999"
@@ -202,7 +194,7 @@ function CompactCount({ size = 48, showLabels = false }) {
               />
             )}
 
-            {taskCounts.notStarted > 0 && (
+            {counts.notStarted > 0 && (
               <path
                 d={createConnectorLine(segments.notStarted)}
                 stroke="#999"
@@ -212,7 +204,7 @@ function CompactCount({ size = 48, showLabels = false }) {
             )}
 
             {/* Text labels */}
-            {taskCounts.completed > 0 && (
+            {counts.completed > 0 && (
               <text
                 x={completedLabelPos.x}
                 y={completedLabelPos.y}
@@ -231,7 +223,7 @@ function CompactCount({ size = 48, showLabels = false }) {
               </text>
             )}
 
-            {taskCounts.inProgress > 0 && (
+            {counts.inProgress > 0 && (
               <text
                 x={inProgressLabelPos.x}
                 y={inProgressLabelPos.y}
@@ -250,7 +242,7 @@ function CompactCount({ size = 48, showLabels = false }) {
               </text>
             )}
 
-            {taskCounts.notStarted > 0 && (
+            {counts.notStarted > 0 && (
               <text
                 x={notStartedLabelPos.x}
                 y={notStartedLabelPos.y}
@@ -281,7 +273,7 @@ function CompactCount({ size = 48, showLabels = false }) {
           fontWeight="bold"
           fill="#000"
         >
-          {taskCounts.total}
+          {counts.total}
         </text>
       </svg>
     </div>
